@@ -435,6 +435,10 @@ Please see the list of environment variables available in the Bitnami Pgpool con
 | PGPOOL_ADMIN_USERNAME=admin          | `nil`                              |
 | PGPOOL_ADMIN_PASSWORD=adminpassword  | `nil`                              |
 | PGPOOL_ENABLE_LOAD_BALANCING         | `yes`                              |
+| PGPOOL_ENABLE_POOL_HBA               | `yes`                              |
+| PGPOOL_ENABLE_POOL_PASSWD            | `yes`                              |
+| PGPOOL_PASSWD_FILE                   | `pool_passwd`                      |
+| PGPOOL_MAX_POOL                      | `15`                               |
 
 # Logging
 
