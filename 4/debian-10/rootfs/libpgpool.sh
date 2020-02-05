@@ -302,6 +302,8 @@ pgpool_create_config() {
     local -i node_counter=0
     local load_balance_mode=""
     local allow_clear_text_frontend_auth="off"
+    local pool_hba="on"
+    local pool_passwd="pool_passwd"
 
     if is_boolean_yes "$PGPOOL_ENABLE_LOAD_BALANCING"; then
         load_balance_mode="on"
