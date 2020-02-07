@@ -122,7 +122,7 @@ pgpool_validate() {
     }
 
     if ! is_yes_no_value "$PGPOOL_ENABLE_POOL_HBA"; then
-        print_validation_error "The values allowed for PGPOOL_ENABLE_LOAD_BALANCING are: yes or no"
+        print_validation_error "The values allowed for PGPOOL_ENABLE_POOL_HBA are: yes or no"
     fi
 
     if ! is_yes_no_value "$PGPOOL_ENABLE_POOL_PASSWD"; then
@@ -139,12 +139,12 @@ pgpool_validate() {
         print_validation_error "The LDAP configuration is required when LDAP authentication is enabled. Set the environment variables PGPOOL_LDAP_URI, PGPOOL_LDAP_BASE, PGPOOL_LDAP_BIND_DN and PGPOOL_LDAP_BIND_PASSWORD with the LDAP configuration."
     fi
 
-    if is_boolean_yes "$PGPOOL_ENABLE_POOL_PASSWD"; then
-        if [[ -z "$PGPOOL_POSTGRES_USERNAME" ]] || [[ -z "$PGPOOL_POSTGRES_PASSWORD" ]]; then
-            print_validation_error "The administrator's database credentials are required. Set the environment variables PGPOOL_POSTGRES_USERNAME and PGPOOL_POSTGRES_PASSWORD with the administrator's database credentials."
-        fi
-    else
-        info "Skip generating postgres administrator's credentials due to PGPOOL_ENABLE_POOL_PASSWD = no"
+    if is_boolean_yes "$PGPOOL_ENABLE_LDAP" && ( ! is_boolean_yes "$PGPOOL_ENABLE_POOL_HBA" || ! is_boolean_yes "$PGPOOL_ENABLE_POOL_PASSWD" ); then
+        print_validation_error "pool_hba.conf authentication and pool password should be enabled for LDAP to work. Keep the PGPOOL_ENABLE_POOL_HBA and PGPOOL_ENABLE_POOL_PASSWD environment variables set to 'yes'."
+    fi
+
+    if [[ -z "$PGPOOL_POSTGRES_USERNAME" ]] || [[ -z "$PGPOOL_POSTGRES_PASSWORD" ]]; then
+        print_validation_error "The administrator's database credentials are required. Set the environment variables PGPOOL_POSTGRES_USERNAME and PGPOOL_POSTGRES_PASSWORD with the administrator's database credentials."
     fi
 
     if [[ -z "$PGPOOL_BACKEND_NODES" ]]; then
@@ -174,7 +174,7 @@ pgpool_attach_node() {
     info "Attaching backend node..."
     export PCPPASSFILE=$(mktemp /tmp/pcppass-XXXXX)
     echo "localhost:9898:${PGPOOL_ADMIN_USERNAME}:${PGPOOL_ADMIN_PASSWORD}" > "${PCPPASSFILE}"
-    pcp_attach_node -h localhost  -U "${PGPOOL_ADMIN_USERNAME}" -p 9898 -n "${node_id}" -w
+    pcp_attach_node -h localhost -U "${PGPOOL_ADMIN_USERNAME}" -p 9898 -n "${node_id}" -w
     rm -rf "${PCPPASSFILE}"
 }
 
@@ -225,14 +225,17 @@ pgpool_start_nslcd_bg() {
 #########################
 pgpool_create_pghba() {
     local authentication="md5"
+    local postgres_auth_line=""
     info "Generating pg_hba.conf file..."
 
     is_boolean_yes "$PGPOOL_ENABLE_LDAP" && authentication="pam pamservice=pgpool.pam"
-
+    if is_boolean_yes "$PGPOOL_ENABLE_POOL_PASSWD"; then
+        postgres_auth_line="host     all             ${PGPOOL_POSTGRES_USERNAME}       all         md5"
+    fi
     cat > "$PGPOOL_PGHBA_FILE" << EOF
 local    all             all                            trust
 host     all             $PGPOOL_SR_CHECK_USER       all         trust
-host     all             $PGPOOL_POSTGRES_USERNAME       all         md5
+$postgres_auth_line
 host     all             wide               all         trust
 host     all             pop_user           all         trust
 host     all             all                all         $authentication
@@ -302,9 +305,9 @@ EOF
 pgpool_create_config() {
     local -i node_counter=0
     local load_balance_mode=""
+    local pool_hba=""
+    local pool_passwd=""
     local allow_clear_text_frontend_auth="off"
-    local pool_hba="on"
-    local pool_passwd="pool_passwd"
 
     if is_boolean_yes "$PGPOOL_ENABLE_LOAD_BALANCING"; then
         load_balance_mode="on"
@@ -446,13 +449,12 @@ EOF
 #   None
 #########################
 pgpool_generate_password_file() {
-
     if is_boolean_yes "$PGPOOL_ENABLE_POOL_PASSWD"; then
         info "Generating password file for local authentication..."
 
         pg_md5 -m --config-file="$PGPOOL_CONF_FILE" -u "$PGPOOL_POSTGRES_USERNAME" "$PGPOOL_POSTGRES_PASSWORD"
     else
-        info "Skip generating password file due to PGPOOL_ENABLE_POOL_PASSWD = no ..."
+        info "Skip generating password file due to PGPOOL_ENABLE_POOL_PASSWD = no"
     fi
 }
 
