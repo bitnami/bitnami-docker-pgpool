@@ -60,6 +60,7 @@ export PGPOOL_ADMIN_USERNAME="${PGPOOL_ADMIN_USERNAME:-}"
 export PGPOOL_ENABLE_LDAP="${PGPOOL_ENABLE_LDAP:-no}"
 export PGPOOL_TIMEOUT="360"
 export PGPOOL_ENABLE_LOAD_BALANCING="${PGPOOL_ENABLE_LOAD_BALANCING:-yes}"
+export PGPOOL_DISABLE_LOAD_BALANCE_ON_WRITE="${PGPOOL_DISABLE_LOAD_BALANCE_ON_WRITE:-transaction}"
 
 EOF
     if [[ -f "${PGPOOL_ADMIN_PASSWORD_FILE:-}" ]]; then
@@ -359,6 +360,7 @@ pgpool_create_config() {
     pgpool_set_property "failover_on_backend_error" "off"
     # Keeps searching for a primary node forever when a failover occurs
     pgpool_set_property "search_primary_node_timeout" "0"
+    pgpool_set_property "disable_load_balance_on_write" "$PGPOOL_DISABLE_LOAD_BALANCE_ON_WRITE"
 
     # Backend settings
     read -r -a nodes <<< "$(tr ',;' ' ' <<< "${PGPOOL_BACKEND_NODES}")"
