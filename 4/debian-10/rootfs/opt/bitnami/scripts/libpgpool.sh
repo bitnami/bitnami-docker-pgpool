@@ -293,7 +293,6 @@ pgpool_create_config() {
     local pool_hba=""
     local pool_passwd=""
     local allow_clear_text_frontend_auth="off"
-    local num_init_children=0
 
     if is_boolean_yes "$PGPOOL_ENABLE_LOAD_BALANCING"; then
         load_balance_mode="on"
