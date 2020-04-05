@@ -43,7 +43,7 @@ Non-root container images add an extra layer of security and are generally recom
 Learn more about the Bitnami tagging policy and the difference between rolling tags and immutable tags [in our documentation page](https://docs.bitnami.com/containers/how-to/understand-rolling-tags-containers/).
 
 
-* [`4-debian-10`, `4.1.1-debian-10-r41`, `4`, `4.1.1`, `latest` (4/debian-10/Dockerfile)](https://github.com/bitnami/bitnami-docker-pgpool/blob/4.1.1-debian-10-r41/4/debian-10/Dockerfile)
+* [`4-debian-10`, `4.1.1-debian-10-r46`, `4`, `4.1.1`, `latest` (4/debian-10/Dockerfile)](https://github.com/bitnami/bitnami-docker-pgpool/blob/4.1.1-debian-10-r46/4/debian-10/Dockerfile)
 
 Subscribe to project updates by watching the [bitnami/pgpool GitHub repo](https://github.com/bitnami/bitnami-docker-pgpool).
 
@@ -247,6 +247,7 @@ Pgpool:
 - `PGPOOL_ENABLE_POOL_PASSWD`: Whether to use a password file specified by `PGPOOL_PASSWD_FILE` for authentication. Defaults to `yes`.
 - `PGPOOL_PASSWD_FILE`: The password file for authentication. Defaults to `pool_passwd`.
 - `PGPOOL_MAX_POOL`: The maximum number of cached connections in each child process. Defaults to `15`.
+- `PGPOOL_NUM_INIT_CHILDREN`: The number of preforked Pgpool server processes. Default is `32`.
 - `PGPOOL_POSTGRES_USERNAME`: Postgres administrator user name, this will be use to allow postgres admin authentication through Pgpool.
 - `PGPOOL_POSTGRES_PASSWORD`: Password for the user set in `PGPOOL_POSTGRES_USERNAME` environment variable. No defaults.
 - `PGPOOL_ADMIN_USERNAME`: Username for the pgpool administrator. No defaults.
@@ -448,6 +449,7 @@ Please see the list of environment variables available in the Bitnami Pgpool con
 | PGPOOL_ENABLE_POOL_PASSWD            | `yes`                              |
 | PGPOOL_PASSWD_FILE                   | `pool_passwd`                      |
 | PGPOOL_MAX_POOL                      | `15`                               |
+| PGPOOL_NUM_INIT_CHILDREN             | `32`                               |
 
 # Logging
 
