@@ -310,7 +310,7 @@ EOF
 pgpool_create_config() {
     local -i node_counter=0
     local load_balance_mode=""
-    local statement_level_load_balance=""
+    local statement_level_load_balance="off"
     local pool_hba=""
     local pool_passwd=""
     local allow_clear_text_frontend_auth="off"
@@ -321,11 +321,7 @@ pgpool_create_config() {
         load_balance_mode="off"
     fi
 
-    if is_boolean_yes "$PGPOOL_ENABLE_STATEMENT_LOAD_BALANCING"; then
-        statement_level_load_balance="on"
-    else
-        statement_level_load_balance="off"
-    fi
+    is_boolean_yes "$PGPOOL_ENABLE_STATEMENT_LOAD_BALANCING" && statement_level_load_balance="on"
 
     if is_boolean_yes "$PGPOOL_ENABLE_POOL_HBA"; then
         pool_hba="on"
