@@ -245,6 +245,7 @@ Pgpool:
 - `PGPOOL_MAX_POOL`: The maximum number of cached connections in each child process. Defaults to `15`.
 - `PGPOOL_LISTEN_BACKLOG_MULTIPLIER`: Specifies the length of connection queue from frontend to Pgpool-II. Defaults to `2`.
 - `PGPOOL_SERIALIZE_ACCEPT`: When set to on, Pgpool-II enables the serialization on incoming client connections. Defaults to `no`.
+- `PGPOOL_MEMORY_CACHE_ENABLED`: Setting to on enables the memory cache. Default is. Defaults to `no`.
 - `PGPOOL_NUM_INIT_CHILDREN`: The number of preforked Pgpool server processes. Default is `32`.
 - `PGPOOL_POSTGRES_USERNAME`: Postgres administrator user name, this will be use to allow postgres admin authentication through Pgpool.
 - `PGPOOL_POSTGRES_PASSWORD`: Password for the user set in `PGPOOL_POSTGRES_USERNAME` environment variable. No defaults.

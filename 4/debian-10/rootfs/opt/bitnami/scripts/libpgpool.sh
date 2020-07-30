@@ -35,6 +35,7 @@ export PGPOOL_ETC_DIR="${PGPOOL_BASE_DIR}/etc"
 export PGPOOL_LOG_DIR="${PGPOOL_BASE_DIR}/logs"
 export PGPOOL_TMP_DIR="${PGPOOL_BASE_DIR}/tmp"
 export PGPOOL_BIN_DIR="${PGPOOL_BASE_DIR}/bin"
+export PGPOOL_MEMQCACHE_OIDDIR="${PGPOOL_BASE_DIR}/oiddir"
 export PGPOOL_INITSCRIPTS_DIR=/docker-entrypoint-initdb.d
 export PGPOOL_CONF_FILE="${PGPOOL_CONF_DIR}/pgpool.conf"
 export PGPOOL_PCP_CONF_FILE="${PGPOOL_ETC_DIR}/pcp.conf"
@@ -48,6 +49,7 @@ export PGPOOL_PASSWD_FILE="${PGPOOL_PASSWD_FILE:-pool_passwd}"
 export PGPOOL_MAX_POOL="${PGPOOL_MAX_POOL:-15}"
 export PGPOOL_LISTEN_BACKLOG_MULTIPLIER="${PGPOOL_LISTEN_BACKLOG_MULTIPLIER:-2}"
 export PGPOOL_SERIALIZE_ACCEPT="${PGPOOL_SERIALIZE_ACCEPT:-no}"
+export PGPOOL_MEMORY_CACHE_ENABLED="${PGPOOL_MEMORY_CACHE_ENABLED:-no}"
 export PATH="${PGPOOL_BIN_DIR}:$PATH"
 
 # Users
@@ -336,12 +338,15 @@ pgpool_create_config() {
     local pool_passwd=""
     local allow_clear_text_frontend_auth="off"
     local serialize_accept="off"
+    local memory_cache_enabled="off"
 
     is_boolean_yes "$PGPOOL_ENABLE_STATEMENT_LOAD_BALANCING" && statement_level_load_balance="on"
     is_boolean_yes "$PGPOOL_ENABLE_LOAD_BALANCING" && load_balance_mode="on"
     is_boolean_yes "$PGPOOL_ENABLE_POOL_HBA" && pool_hba="on"
     # ref: https://www.pgpool.net/docs/latest/en/html/runtime-config-connection-pooling.html#GUC-SERIALIZE-ACCEPT
     is_boolean_yes "$PGPOOL_SERIALIZE_ACCEPT" && serialize_accept="on"
+    # ref: https://www.pgpool.net/docs/latest/en/html/runtime-in-memory-query-cache.html#GUC-MEMORY-CACHE-ENABLED
+    is_boolean_yes "$PGPOOL_MEMORY_CACHE_ENABLED" && memory_cache_enabled="on"
 
     if is_boolean_yes "$PGPOOL_ENABLE_POOL_PASSWD"; then
         pool_passwd="$PGPOOL_PASSWD_FILE"
@@ -381,6 +386,10 @@ pgpool_create_config() {
     pgpool_set_property "max_pool" "$PGPOOL_MAX_POOL"
     pgpool_set_property "listen_backlog_multiplier" "$PGPOOL_LISTEN_BACKLOG_MULTIPLIER"
     pgpool_set_property "serialize_accept" "$serialize_accept"
+    # In Memory Query Cache
+    # https://www.pgpool.net/docs/latest/en/html/runtime-in-memory-query-cache.html
+    pgpool_set_property "memory_cache_enabled" "$memory_cache_enabled"
+    pgpool_set_property "memqcache_oiddir" "$PGPOOL_MEMQCACHE_OIDDIR"
     # File Locations settings
     pgpool_set_property "pid_file_name" "$PGPOOL_PID_FILE"
     pgpool_set_property "logdir" "$PGPOOL_LOG_DIR"
