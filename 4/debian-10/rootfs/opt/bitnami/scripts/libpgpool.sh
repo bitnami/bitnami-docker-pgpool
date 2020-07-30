@@ -380,7 +380,7 @@ pgpool_create_config() {
     # Load Balancing settings
     # https://www.pgpool.net/docs/latest/en/html/runtime-config-load-balancing.html
     pgpool_set_property "load_balance_mode" "$load_balance_mode"
-    pgpool_set_property "black_function_list" "nextval,setval"
+    pgpool_set_property "black_function_list" "nextval,setval,lastval,currval"
     pgpool_set_property "statement_level_load_balance" "$statement_level_load_balance"
     # Streaming Replication Check settings
     # https://www.pgpool.net/docs/latest/en/html/runtime-streaming-replication-check.html
