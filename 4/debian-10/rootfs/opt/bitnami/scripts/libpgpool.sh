@@ -47,6 +47,7 @@ export PGPOOL_USER_CONF_FILE="${PGPOOL_USER_CONF_FILE:-}"
 export PGPOOL_PASSWD_FILE="${PGPOOL_PASSWD_FILE:-pool_passwd}"
 export PGPOOL_MAX_POOL="${PGPOOL_MAX_POOL:-15}"
 export PGPOOL_LISTEN_BACKLOG_MULTIPLIER="${PGPOOL_LISTEN_BACKLOG_MULTIPLIER:-2}"
+export PGPOOL_SERIALIZE_ACCEPT="${PGPOOL_SERIALIZE_ACCEPT:-no}"
 export PATH="${PGPOOL_BIN_DIR}:$PATH"
 
 # Users
@@ -334,10 +335,13 @@ pgpool_create_config() {
     local pool_hba="off"
     local pool_passwd=""
     local allow_clear_text_frontend_auth="off"
+    local serialize_accept="off"
 
     is_boolean_yes "$PGPOOL_ENABLE_STATEMENT_LOAD_BALANCING" && statement_level_load_balance="on"
     is_boolean_yes "$PGPOOL_ENABLE_LOAD_BALANCING" && load_balance_mode="on"
     is_boolean_yes "$PGPOOL_ENABLE_POOL_HBA" && pool_hba="on"
+    # ref: https://www.pgpool.net/docs/latest/en/html/runtime-config-connection-pooling.html#GUC-SERIALIZE-ACCEPT
+    is_boolean_yes "$PGPOOL_SERIALIZE_ACCEPT" && serialize_accept="on"
 
     if is_boolean_yes "$PGPOOL_ENABLE_POOL_PASSWD"; then
         pool_passwd="$PGPOOL_PASSWD_FILE"
@@ -376,6 +380,7 @@ pgpool_create_config() {
     # http://www.pgpool.net/docs/latest/en/html/runtime-config-connection-pooling.html
     pgpool_set_property "max_pool" "$PGPOOL_MAX_POOL"
     pgpool_set_property "listen_backlog_multiplier" "$PGPOOL_LISTEN_BACKLOG_MULTIPLIER"
+    pgpool_set_property "serialize_accept" "$serialize_accept"
     # File Locations settings
     pgpool_set_property "pid_file_name" "$PGPOOL_PID_FILE"
     pgpool_set_property "logdir" "$PGPOOL_LOG_DIR"
