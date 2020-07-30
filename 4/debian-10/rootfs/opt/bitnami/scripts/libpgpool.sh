@@ -46,6 +46,7 @@ export PGPOOL_ENABLE_POOL_PASSWD="${PGPOOL_ENABLE_POOL_PASSWD:-yes}"
 export PGPOOL_USER_CONF_FILE="${PGPOOL_USER_CONF_FILE:-}"
 export PGPOOL_PASSWD_FILE="${PGPOOL_PASSWD_FILE:-pool_passwd}"
 export PGPOOL_MAX_POOL="${PGPOOL_MAX_POOL:-15}"
+export PGPOOL_LISTEN_BACKLOG_MULTIPLIER="${PGPOOL_LISTEN_BACKLOG_MULTIPLIER:-2}"
 export PATH="${PGPOOL_BIN_DIR}:$PATH"
 
 # Users
@@ -374,6 +375,7 @@ pgpool_create_config() {
     # Connection Pooling settings
     # http://www.pgpool.net/docs/latest/en/html/runtime-config-connection-pooling.html
     pgpool_set_property "max_pool" "$PGPOOL_MAX_POOL"
+    pgpool_set_property "listen_backlog_multiplier" "$PGPOOL_LISTEN_BACKLOG_MULTIPLIER"
     # File Locations settings
     pgpool_set_property "pid_file_name" "$PGPOOL_PID_FILE"
     pgpool_set_property "logdir" "$PGPOOL_LOG_DIR"
