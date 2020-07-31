@@ -259,6 +259,12 @@ Pgpool:
 - `PGPOOL_USER_CONF_FILE`: Configuration file to be added to the generated config file. This allow to override configuration set by the initializacion process. No defaults.
 - `PGPOOL_POSTGRES_CUSTOM_USERS`: List of comma or semicolon separeted list of postgres usernames. This will create entries in `pgpool_passwd`. No defaults.
 - `PGPOOL_POSTGRES_CUSTOM_PASSWORDS`: List of comma or semicolon separated list for postgresql user passwords. These are the corresponding passwords for the users in `PGPOOL_POSTGRES_CUSTOM_USERS`. No defaults.
+- `PGPOOL_ENABLE_SHARED_RELCACHE`: By setting to on, relation cache is shared among Pgpool-II child processes using the in memory query cache. Defaults to `on`. Cache invalidation is not happen even if the system catalog is modified. So it is strongly recommend to set time out base cache invalidation by using `PGPOOL_RELCACHE_EXPIRE`.
+- `PGPOOL_RELCACHE_EXPIRE`: Specifies the relation cache expiration time in seconds. Defaults to `0`, which means the cache never expires.
+- `PGPOOL_RELCACHE_SIZE`: Specifies the number of relcache entries. Defaults to `256`.
+- `PGPOOL_RELCACHE_QUERY_TARGET`: The target node to send queries to create relation cache entries ('master', 'load_balance_node'). Defaults to `master`.
+- `PGPOOL_CHECK_TEMP_TABLE`: Setting to catalog or trace, enables the temporary table check in the SELECT statements ('catalog', 'trace', 'none'). Defaults to `catalog`.
+- `PGPOOL_CHECK_UNLOGGED_TABLE`: Setting to on, enables the unlogged table check in the SELECT statements. Defaults to `on`.
 
 PostgreSQL with Replication Manager:
 

@@ -47,9 +47,6 @@ export PGPOOL_ENABLE_POOL_PASSWD="${PGPOOL_ENABLE_POOL_PASSWD:-yes}"
 export PGPOOL_USER_CONF_FILE="${PGPOOL_USER_CONF_FILE:-}"
 export PGPOOL_PASSWD_FILE="${PGPOOL_PASSWD_FILE:-pool_passwd}"
 export PGPOOL_MAX_POOL="${PGPOOL_MAX_POOL:-15}"
-export PGPOOL_LISTEN_BACKLOG_MULTIPLIER="${PGPOOL_LISTEN_BACKLOG_MULTIPLIER:-2}"
-export PGPOOL_SERIALIZE_ACCEPT="${PGPOOL_SERIALIZE_ACCEPT:-no}"
-export PGPOOL_MEMORY_CACHE_ENABLED="${PGPOOL_MEMORY_CACHE_ENABLED:-no}"
 export PATH="${PGPOOL_BIN_DIR}:$PATH"
 
 # Users
@@ -76,6 +73,15 @@ export PGPOOL_HEALTH_CHECK_MAX_RETRIES="${PGPOOL_HEALTH_CHECK_MAX_RETRIES:-5}"
 export PGPOOL_HEALTH_CHECK_RETRY_DELAY="${PGPOOL_HEALTH_CHECK_RETRY_DELAY:-5}"
 export PGPOOL_POSTGRES_CUSTOM_USERS="${PGPOOL_POSTGRES_CUSTOM_USERS:-}"
 export PGPOOL_POSTGRES_CUSTOM_PASSWORDS="${PGPOOL_POSTGRES_CUSTOM_PASSWORDS:-}"
+export PGPOOL_LISTEN_BACKLOG_MULTIPLIER="${PGPOOL_LISTEN_BACKLOG_MULTIPLIER:-2}"
+export PGPOOL_SERIALIZE_ACCEPT="${PGPOOL_SERIALIZE_ACCEPT:-no}"
+export PGPOOL_MEMORY_CACHE_ENABLED="${PGPOOL_MEMORY_CACHE_ENABLED:-no}"
+export PGPOOL_RELCACHE_EXPIRE="${PGPOOL_RELCACHE_EXPIRE:-0}"
+export PGPOOL_RELCACHE_SIZE="${PGPOOL_RELCACHE_SIZE:-256}"
+export PGPOOL_ENABLE_SHARED_RELCACHE="${PGPOOL_ENABLE_SHARED_RELCACHE:-yes}"
+export PGPOOL_RELCACHE_QUERY_TARGET="${PGPOOL_RELCACHE_QUERY_TARGET:-master}"
+export PGPOOL_CHECK_TEMP_TABLE="${PGPOOL_CHECK_TEMP_TABLE:-catalog}"
+export PGPOOL_CHECK_UNLOGGED_TABLE="${PGPOOL_CHECK_UNLOGGED_TABLE:-yes}"
 EOF
     if [[ -f "${PGPOOL_ADMIN_PASSWORD_FILE:-}" ]]; then
         cat << "EOF"
@@ -174,20 +180,35 @@ pgpool_validate() {
         print_validation_error "The provided PGPOOL_USER_CONF_FILE: ${PGPOOL_USER_CONF_FILE} must exist."
     fi
 
-    local yes_no_values=("PGPOOL_ENABLE_POOL_HBA" "PGPOOL_ENABLE_POOL_PASSWD" "PGPOOL_ENABLE_LOAD_BALANCING" "PGPOOL_ENABLE_STATEMENT_LOAD_BALANCING")
+    local yes_no_values=("PGPOOL_ENABLE_POOL_HBA" "PGPOOL_ENABLE_POOL_PASSWD" "PGPOOL_ENABLE_LOAD_BALANCING" "PGPOOL_ENABLE_STATEMENT_LOAD_BALANCING" "PGPOOL_SERIALIZE_ACCEPT" "PGPOOL_MEMORY_CACHE_ENABLED" "PGPOOL_ENABLE_SHARED_RELCACHE" "PGPOOL_CHECK_UNLOGGED_TABLE")
     for yn in "${yes_no_values[@]}"; do
         if ! is_yes_no_value "${!yn}"; then
             print_validation_error "The values allowed for $yn are: yes or no"
         fi
     done
-    local positive_values=("PGPOOL_NUM_INIT_CHILDREN" "PGPOOL_HEALTH_CHECK_PERIOD" "PGPOOL_HEALTH_CHECK_TIMEOUT" "PGPOOL_HEALTH_CHECK_MAX_RETRIES" "PGPOOL_HEALTH_CHECK_RETRY_DELAY")
+    local positive_values=("PGPOOL_NUM_INIT_CHILDREN" "PGPOOL_HEALTH_CHECK_PERIOD" "PGPOOL_HEALTH_CHECK_TIMEOUT" "PGPOOL_HEALTH_CHECK_MAX_RETRIES" "PGPOOL_HEALTH_CHECK_RETRY_DELAY" "PGPOOL_LISTEN_BACKLOG_MULTIPLIER" "PGPOOL_RELCACHE_SIZE")
     for p in "${positive_values[@]}"; do
         if ! is_positive_int "${!p}"; then
             print_validation_error "The values allowed for $p: integer greater than 0"
         fi
     done
+    local int_values=("PGPOOL_RELCACHE_EXPIRE")
+    for p in "${int_values[@]}"; do
+        if ! is_int "${!p}"; then
+            print_validation_error "The values allowed for $p: integer"
+        fi
+    done
     if ! [[ "$PGPOOL_DISABLE_LOAD_BALANCE_ON_WRITE" =~ ^(off|transaction|trans_transaction|always)$ ]]; then
 	    print_validation_error "The values allowed for PGPOOL_DISABLE_LOAD_BALANCE_ON_WRITE: off,transaction,trans_transaction,always"
+    fi
+    if ! [[ "$PGPOOL_RELCACHE_QUERY_TARGET" =~ ^(master|load_balance_node)$ ]]; then
+	    print_validation_error "The values allowed for PGPOOL_RELCACHE_QUERY_TARGET: master,load_balance_node"
+    fi
+    if ! [[ "$PGPOOL_CHECK_TEMP_TABLE" =~ ^(catalog|trace|none)$ ]]; then
+	    print_validation_error "The values allowed for PGPOOL_CHECK_TEMP_TABLE: catalog,trace,none"
+    fi
+    if [[ ! -z "$PGPOOL_BACKEND_NODES_REGION_WEIGHT" ]] && [[ -z "$PGPOOL_REGION" ]]; then
+        print_validation_error "For regional weight of the Backend Nodes the environment variable PGPOOL_REGION has to be set!"
     fi
 
     # Custom users validations
@@ -339,6 +360,8 @@ pgpool_create_config() {
     local allow_clear_text_frontend_auth="off"
     local serialize_accept="off"
     local memory_cache_enabled="off"
+    local enable_shared_relcache="off"
+    local check_unlogged_table="off"
 
     is_boolean_yes "$PGPOOL_ENABLE_STATEMENT_LOAD_BALANCING" && statement_level_load_balance="on"
     is_boolean_yes "$PGPOOL_ENABLE_LOAD_BALANCING" && load_balance_mode="on"
@@ -347,6 +370,10 @@ pgpool_create_config() {
     is_boolean_yes "$PGPOOL_SERIALIZE_ACCEPT" && serialize_accept="on"
     # ref: https://www.pgpool.net/docs/latest/en/html/runtime-in-memory-query-cache.html#GUC-MEMORY-CACHE-ENABLED
     is_boolean_yes "$PGPOOL_MEMORY_CACHE_ENABLED" && memory_cache_enabled="on"
+    # ref: https://www.pgpool.net/docs/latest/en/html/runtime-misc.html#GUC-ENABLE-SHARED-RELCACHE
+    is_boolean_yes "$PGPOOL_ENABLE_SHARED_RELCACHE" && enable_shared_relcache="on"
+    # ref: https://www.pgpool.net/docs/latest/en/html/runtime-misc.html#GUC-CHECK-UNLOGGED-TABLE
+    is_boolean_yes "$PGPOOL_CHECK_UNLOGGED_TABLE" && $check_unlogged_table="on"
 
     if is_boolean_yes "$PGPOOL_ENABLE_POOL_PASSWD"; then
         pool_passwd="$PGPOOL_PASSWD_FILE"
@@ -418,6 +445,12 @@ pgpool_create_config() {
     pgpool_set_property "search_primary_node_timeout" "0"
     pgpool_set_property "disable_load_balance_on_write" "$PGPOOL_DISABLE_LOAD_BALANCE_ON_WRITE"
     pgpool_set_property "num_init_children" "$PGPOOL_NUM_INIT_CHILDREN"
+    pgpool_set_property "relcache_expire" "$PGPOOL_RELCACHE_EXPIRE"
+    pgpool_set_property "relcache_size" "$PGPOOL_RELCACHE_SIZE"
+    pgpool_set_property "enable_shared_relcache" "$enable_shared_relcache"
+    pgpool_set_property "relcache_query_target" "$PGPOOL_RELCACHE_QUERY_TARGET"
+    pgpool_set_property "check_temp_table" "$PGPOOL_CHECK_TEMP_TABLE"
+    pgpool_set_property "check_unlogged_table" "$check_unlogged_table"
 
     # Backend settings
     read -r -a nodes <<< "$(tr ',;' ' ' <<< "${PGPOOL_BACKEND_NODES}")"
