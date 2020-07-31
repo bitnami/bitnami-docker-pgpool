@@ -341,7 +341,7 @@ pgpool_set_property() {
 pgpool_backend_get_region_weight() {
     local -r host=${1:?host is missing}
     local -r default_weight=${2:?default_weight is missing}
-    local region_weight
+    local region_weight="none"
 
     if [[ ! -z "$PGPOOL_BACKEND_NODES_REGION_WEIGHT" ]]; then
       read -r -a nodes_region_weight <<< "$(tr ',;' ' ' <<< "${PGPOOL_BACKEND_NODES_REGION_WEIGHT}")"
@@ -349,13 +349,14 @@ pgpool_backend_get_region_weight() {
           read -r -a fields <<< "$(tr ':' ' ' <<< "${node_region_weight}")"
           if [[ "${fields[0]}" == "$host" ]] && [[ "${fields[1]}" == "$PGPOOL_REGION" ]]; then
               region_weight="${fields[2]}"
-              debug "Setting Backend weight for '$host' to '$region_weight' based on Region '$PGPOOL_REGION'"
           fi
       done
     fi
-    if [[ ! -z "$region_weight" ]]; then
+    if [[ "$region_weight" != "none" ]] ; then
+      debug "Setting Backend weight for '$host' to '$region_weight' based on Region '$PGPOOL_REGION'"
       echo "$region_weight"
     else
+      debug "Setting Backend weight for '$host' to '$default_weight'"
       echo "$default_weight"
     fi
 }
