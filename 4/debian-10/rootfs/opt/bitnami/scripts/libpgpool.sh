@@ -82,6 +82,10 @@ export PGPOOL_ENABLE_SHARED_RELCACHE="${PGPOOL_ENABLE_SHARED_RELCACHE:-yes}"
 export PGPOOL_RELCACHE_QUERY_TARGET="${PGPOOL_RELCACHE_QUERY_TARGET:-master}"
 export PGPOOL_CHECK_TEMP_TABLE="${PGPOOL_CHECK_TEMP_TABLE:-catalog}"
 export PGPOOL_CHECK_UNLOGGED_TABLE="${PGPOOL_CHECK_UNLOGGED_TABLE:-yes}"
+export PGPOOL_REGION="${PGPOOL_REGION:-}"
+export PGPOOL_BACKEND_NODES_REGION_WEIGHT="${PGPOOL_BACKEND_NODES_REGION_WEIGHT:-}"
+
+
 EOF
     if [[ -f "${PGPOOL_ADMIN_PASSWORD_FILE:-}" ]]; then
         cat << "EOF"
@@ -210,6 +214,21 @@ pgpool_validate() {
     if [[ ! -z "$PGPOOL_BACKEND_NODES_REGION_WEIGHT" ]] && [[ -z "$PGPOOL_REGION" ]]; then
         print_validation_error "For regional weight of the Backend Nodes the environment variable PGPOOL_REGION has to be set!"
     fi
+    if ! [[ -z "$PGPOOL_BACKEND_NODES_REGION_WEIGHT" ]]; then
+        read -r -a nodes_region_weight <<< "$(tr ',;' ' ' <<< "${PGPOOL_BACKEND_NODES_REGION_WEIGHT}")"
+        for node_region_weight in "${nodes_region_weight[@]}"; do
+            read -r -a fields <<< "$(tr ':' ' ' <<< "${node_region_weight}")"
+            if [[ -z "${fields[0]:-}" ]]; then
+                print_validation_error "Error checking entry '$node_region_weight', the field 'host' must be set!"
+            fi
+            if [[ -z "${fields[1]:-}" ]]; then
+                print_validation_error "Error checking entry '$node_region_weight', the field 'region' must be set!"
+            fi
+            if [[ -z "${fields[2]:-}" ]]; then
+                print_validation_error "Error checking entry '$node_region_weight', the field 'weight' must be set!"
+            fi
+        done
+    fi
 
     # Custom users validations
     read -r -a custom_users_list <<< "$(tr ',;' ' ' <<< "${PGPOOL_POSTGRES_CUSTOM_USERS}")"
@@ -310,11 +329,43 @@ pgpool_set_property() {
 }
 
 ########################
+# Returns Region Weight of the Backend
+# Globals:
+#   PGPOOL_*
+# Arguments:
+#   $1 - host
+#   $2 - default_weight
+# Returns:
+#   None
+#########################
+pgpool_backend_get_region_weight() {
+    local -r host=${1:?host is missing}
+    local -r default_weight=${2:?default_weight is missing}
+    local region_weight
+
+    if [[ ! -z "$PGPOOL_BACKEND_NODES_REGION_WEIGHT" ]]; then
+      read -r -a nodes_region_weight <<< "$(tr ',;' ' ' <<< "${PGPOOL_BACKEND_NODES_REGION_WEIGHT}")"
+      for node_region_weight in "${nodes_region_weight[@]}"; do
+          read -r -a fields <<< "$(tr ':' ' ' <<< "${node_region_weight}")"
+          if [[ "${fields[0]}" == "$host" ]] && [[ "${fields[1]}" == "$PGPOOL_REGION" ]]; then
+              region_weight="${fields[2]}"
+              debug "Setting Backend weight for '$host' to '$region_weight' based on Region '$PGPOOL_REGION'"
+          fi
+      done
+    fi
+    if [[ ! -z "$region_weight" ]]; then
+      echo "$region_weight"
+    else
+      echo "$default_weight"
+    fi
+}
+
+########################
 # Add a backend configuration to pgpool.conf file
 # Globals:
 #   PGPOOL_*
 # Arguments:
-#   None
+#   $1 - node
 # Returns:
 #   None
 #########################
@@ -328,7 +379,8 @@ pgpool_create_backend_config() {
     local -r num="${fields[0]:?field num is needed}"
     local -r host="${fields[1]:?field host is needed}"
     local -r port="${fields[2]:-5432}"
-    local -r weight="${fields[3]:-1}"
+    local -r default_weight="${fields[3]:-1}"
+    local -r weight=$(pgpool_backend_get_region_weight $host $default_weight)
     local -r dir="${fields[4]:-$PGPOOL_DATA_DIR}"
     local -r flag="${fields[5]:-ALLOW_TO_FAILOVER}"
 

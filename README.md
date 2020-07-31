@@ -265,6 +265,8 @@ Pgpool:
 - `PGPOOL_RELCACHE_QUERY_TARGET`: The target node to send queries to create relation cache entries ('master', 'load_balance_node'). Defaults to `master`.
 - `PGPOOL_CHECK_TEMP_TABLE`: Setting to catalog or trace, enables the temporary table check in the SELECT statements ('catalog', 'trace', 'none'). Defaults to `catalog`.
 - `PGPOOL_CHECK_UNLOGGED_TABLE`: Setting to on, enables the unlogged table check in the SELECT statements. Defaults to `on`.
+- `PGPOOL_REGION`: Region of the Pgpool-II server. No defaults.
+- `PGPOOL_BACKEND_NODES_REGION_WEIGHT`: Comma separated list of backend nodes region weight in the cluster. No defaults. e.g this value is `pg-0:eu-west:2,pg-1:eu-south:2` and `PGPOOL_REGION` is set to `eu-west` the weight of the backend node `pg-0` will be set to `2` on startup.
 
 PostgreSQL with Replication Manager:
 
