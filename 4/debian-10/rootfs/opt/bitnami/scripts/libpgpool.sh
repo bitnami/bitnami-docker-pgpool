@@ -57,6 +57,7 @@ export PGPOOL_BACKEND_NODES="${PGPOOL_BACKEND_NODES:-}"
 export PGPOOL_SR_CHECK_USER="${PGPOOL_SR_CHECK_USER:-}"
 export PGPOOL_SR_CHECK_PERIOD="${PGPOOL_SR_CHECK_PERIOD:-30}"
 export PGPOOL_SR_CHECK_DATABASE="${PGPOOL_SR_CHECK_DATABASE:-postgres}"
+export PGPOOL_AUTO_FAILBACK="${PGPOOL_AUTO_FAILBACK:-no}"
 export PGPOOL_POSTGRES_USERNAME="${PGPOOL_POSTGRES_USERNAME:-postgres}"
 export PGPOOL_ADMIN_USERNAME="${PGPOOL_ADMIN_USERNAME:-}"
 export PGPOOL_ENABLE_LDAP="${PGPOOL_ENABLE_LDAP:-no}"
@@ -182,7 +183,7 @@ pgpool_validate() {
         print_validation_error "The provided PGPOOL_USER_CONF_FILE: ${PGPOOL_USER_CONF_FILE} must exist."
     fi
 
-    local yes_no_values=("PGPOOL_ENABLE_POOL_HBA" "PGPOOL_ENABLE_POOL_PASSWD" "PGPOOL_ENABLE_LOAD_BALANCING" "PGPOOL_ENABLE_STATEMENT_LOAD_BALANCING" "PGPOOL_ENABLE_LOG_CONNECTIONS" "PGPOOL_ENABLE_LOG_HOSTNAME" "PGPOOL_ENABLE_LOG_PER_NODE_STATEMENT")
+    local yes_no_values=("PGPOOL_AUTO_FAILBACK" "PGPOOL_ENABLE_POOL_HBA" "PGPOOL_ENABLE_POOL_PASSWD" "PGPOOL_ENABLE_LOAD_BALANCING" "PGPOOL_ENABLE_STATEMENT_LOAD_BALANCING" "PGPOOL_ENABLE_LOG_CONNECTIONS" "PGPOOL_ENABLE_LOG_HOSTNAME" "PGPOOL_ENABLE_LOG_PER_NODE_STATEMENT")
     for yn in "${yes_no_values[@]}"; do
         if ! is_yes_no_value "${!yn}"; then
             print_validation_error "The values allowed for $yn are: yes or no"
@@ -407,6 +408,8 @@ pgpool_create_config() {
     [[ -n "${PGPOOL_CHILD_LIFE_TIME:-}" ]] && pgpool_set_property "child_life_time" "$PGPOOL_CHILD_LIFE_TIME"
     [[ -n "${PGPOOL_CONNECTION_LIFE_TIME:-}" ]] && pgpool_set_property "connection_life_time" "$PGPOOL_CONNECTION_LIFE_TIME"
     [[ -n "${PGPOOL_CLIENT_IDLE_LIMIT-}" ]] && pgpool_set_property "client_idle_limit" "$PGPOOL_CLIENT_IDLE_LIMIT"
+    # Auto-failback
+    pgpool_set_property "auto_failback" "$(is_boolean_yes "$PGPOOL_AUTO_FAILBACK" && echo "on" || echo "off")"
     # Logging settings
     # https://www.pgpool.net/docs/latest/en/html/runtime-config-logging.html
     pgpool_set_property "log_connections" "$(is_boolean_yes "$PGPOOL_ENABLE_LOG_CONNECTIONS" && echo "on" || echo "off")"
