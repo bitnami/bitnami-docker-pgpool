@@ -364,6 +364,7 @@ backend_port$num = $port
 backend_weight$num = $weight
 backend_data_directory$num = '$dir'
 backend_flag$num = '$flag'
+backend_application_name$num = '$host'
 EOF
 }
 
