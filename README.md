@@ -447,11 +447,11 @@ Run the Pgpool image, mounting a directory from your host and setting `PGPOOL_US
      ports:
        - 5432:5432
 +    volumes:
- +      - /path/to/myconf.conf:/config/myconf.conf
- +      - /path/to/myhbaconf.conf:/config/myhbaconf.conf
-      environment:
- +      - PGPOOL_USER_CONF_FILE=/config/myconf.conf
- +      - PGPOOL_USER_HBA_FILE=/config/myhbaconf.conf
++      - /path/to/myconf.conf:/config/myconf.conf
++      - /path/to/myhbaconf.conf:/config/myhbaconf.conf
+     environment:
++      - PGPOOL_USER_CONF_FILE=/config/myconf.conf
++      - PGPOOL_USER_HBA_FILE=/config/myhbaconf.conf
        - PGPOOL_BACKEND_NODES=0:pg-0:5432,1:pg-1:5432
        - PGPOOL_SR_CHECK_USER=customuser
 ```
