@@ -455,6 +455,7 @@ pgpool_create_config() {
     pgpool_set_property "black_function_list" "nextval,setval"
     pgpool_set_property "statement_level_load_balance" "$(is_boolean_yes "$PGPOOL_ENABLE_STATEMENT_LOAD_BALANCING" && echo "on" || echo "off")"
     [[ -n "${PGPOOL_DATABASE_REDIRECT_PREFERENCE_LIST:-}" ]] && pgpool_set_property "database_redirect_preference_list" "$PGPOOL_DATABASE_REDIRECT_PREFERENCE_LIST"
+    [[ -n "${PGPOOL_APP_NAME_REDIRECT_PREFERENCE_LIST:-}" ]] && pgpool_set_property "app_name_redirect_preference_list" "$PGPOOL_APP_NAME_REDIRECT_PREFERENCE_LIST"
     # Streaming Replication Check settings
     # https://www.pgpool.net/docs/latest/en/html/runtime-streaming-replication-check.html
     pgpool_set_property "sr_check_user" "$PGPOOL_SR_CHECK_USER"
